@@ -121,13 +121,14 @@ Public Class Form1
         SetupDataGridView()
         If My.Computer.FileSystem.FileExists(saveLoc + "/settings.json") Then
             Dim setting As settings = JsonConvert.DeserializeObject(Of settings)(File.ReadAllText(saveLoc + "\settings.json"))
-            loadPlaylistFromFile(saveLoc + "\" + setting.lastopenedfile + ".json")
+            If My.Computer.FileSystem.FileExists(saveLoc + "/" + setting.lastopenedfile + ".json") Then
+                loadPlaylistFromFile(saveLoc + "\" + setting.lastopenedfile + ".json")
+            End If
         End If
 
     End Sub
 
     Private Sub ContinuePlaylist_Click(sender As Object, e As EventArgs) Handles ContinuePlaylist.Click
-        Dim filename = ""
 
         For Each row As DataGridViewRow In videoList.Rows
             If row.Cells(4).Value.ToString() = "False" Then
@@ -138,10 +139,7 @@ Public Class Form1
                 videoForm.sendSaveData(Me)
                 videoForm.WMPlayer.URL = row.Cells(0).Value
                 videoForm.con.currentPosition = TimeSpan.Parse(row.Cells(3).Value).TotalSeconds()
-
-
                 Exit Sub
-
             End If
         Next
 
@@ -168,10 +166,44 @@ Public Class Form1
         For Each item As KeyValuePair(Of String, String()) In JsonConvert.DeserializeObject(Of Dictionary(Of String, String()))(File.ReadAllText(filepath))
             videoList.Rows.Add(item.Key, item.Value(0), item.Value(1), item.Value(2), item.Value(3))
         Next
+        For Each row As DataGridViewRow In videoList.Rows
+            If row.Cells(4).Value.ToString() = "True" Then
+                row.Cells(1).Style.ForeColor = Color.Silver
+                row.Cells(2).Style.ForeColor = Color.Silver
+                row.Cells(3).Style.ForeColor = Color.Silver
+            End If
+        Next
         saveSettings()
     End Sub
 
     Private Sub saveBeforeClose(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
         savePlaylist(videoList, PlaylistName.Text, saveLoc)
+    End Sub
+
+    Public Sub playNext(prevVideo As Integer)
+        For Each row As DataGridViewRow In videoList.Rows
+            If row.Index = prevVideo + 1 Then
+                videoForm.Close()
+                videoForm = New Form2
+                videoForm.Show()
+                videoForm.sendSaveData(Me)
+                videoForm.WMPlayer.URL = row.Cells(0).Value
+                videoForm.con.currentPosition = TimeSpan.Parse(row.Cells(3).Value).TotalSeconds()
+                Exit For
+            End If
+        Next
+    End Sub
+
+    Private Sub DeletePlayist_Click(sender As Object, e As EventArgs) Handles DeletePlayist.Click
+        Dim deletePlaylist As deleteConfim
+        deletePlaylist = New deleteConfim()
+        deletePlaylist.question = "Are you sure you want to delete the Playlist '" + PlaylistName.Text + "'?"
+        If deletePlaylist.ShowDialog(Me) = DialogResult.Yes Then
+            My.Computer.FileSystem.DeleteFile(saveLoc + "/" + PlaylistName.Text + ".json",
+Microsoft.VisualBasic.FileIO.UIOption.AllDialogs,
+Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin)
+            videoList.Rows.Clear()
+            PlaylistName.Text = ""
+        End If
     End Sub
 End Class

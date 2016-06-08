@@ -31,8 +31,15 @@
             For Each row As DataGridViewRow In f1.videoList.Rows
                 If row.Cells(0).Value.ToString() = WMPlayer.currentMedia.sourceURL() Then
                     row.Cells(3).Value = TimeSpan.FromSeconds(con.currentPosition).ToString("hh\:mm\:ss")
+                    If TimeSpan.FromSeconds(con.currentPosition).TotalSeconds() >= TimeSpan.Parse(row.Cells(2).Value).TotalSeconds() Then
+                        row.Cells(4).Value = "True"
+                        row.Cells(1).Style.ForeColor = Color.Silver
+                        row.Cells(2).Style.ForeColor = Color.Silver
+                        row.Cells(3).Style.ForeColor = Color.Silver
+                        f1.playNext(row.Index)
+                    End If
                     Exit For
-                End If
+                    End If
             Next
         End If
     End Sub

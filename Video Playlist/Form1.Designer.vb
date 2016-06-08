@@ -22,7 +22,7 @@ Partial Class Form1
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
-        Dim DataGridViewCellStyle1 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
+        Dim DataGridViewCellStyle2 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
         Me.OpenVideo = New System.Windows.Forms.Button()
         Me.OpenFileDialog = New System.Windows.Forms.OpenFileDialog()
         Me.videoList = New System.Windows.Forms.DataGridView()
@@ -53,8 +53,8 @@ Partial Class Form1
         'videoList
         '
         Me.videoList.AllowUserToAddRows = False
-        DataGridViewCellStyle1.BackColor = System.Drawing.Color.FromArgb(CType(CType(224, Byte), Integer), CType(CType(224, Byte), Integer), CType(CType(224, Byte), Integer))
-        Me.videoList.AlternatingRowsDefaultCellStyle = DataGridViewCellStyle1
+        DataGridViewCellStyle2.BackColor = System.Drawing.Color.FromArgb(CType(CType(224, Byte), Integer), CType(CType(224, Byte), Integer), CType(CType(224, Byte), Integer))
+        Me.videoList.AlternatingRowsDefaultCellStyle = DataGridViewCellStyle2
         Me.videoList.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill
         Me.videoList.Location = New System.Drawing.Point(166, 41)
         Me.videoList.Name = "videoList"
@@ -138,6 +138,7 @@ Partial Class Form1
         Me.Controls.Add(Me.NewPlayist)
         Me.Controls.Add(Me.OpenPlaylist)
         Me.Controls.Add(Me.videoList)
+        Me.Cursor = System.Windows.Forms.Cursors.Default
         Me.MinimumSize = New System.Drawing.Size(772, 538)
         Me.Name = "Form1"
         Me.Text = "Video Playlist"
