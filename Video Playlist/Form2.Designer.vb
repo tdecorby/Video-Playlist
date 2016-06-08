@@ -34,14 +34,14 @@ Partial Class Form2
         Me.WMPlayer.Location = New System.Drawing.Point(0, 0)
         Me.WMPlayer.Name = "WMPlayer"
         Me.WMPlayer.OcxState = CType(resources.GetObject("WMPlayer.OcxState"), System.Windows.Forms.AxHost.State)
-        Me.WMPlayer.Size = New System.Drawing.Size(284, 261)
+        Me.WMPlayer.Size = New System.Drawing.Size(455, 362)
         Me.WMPlayer.TabIndex = 0
         '
         'Form2
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(284, 261)
+        Me.ClientSize = New System.Drawing.Size(455, 362)
         Me.Controls.Add(Me.WMPlayer)
         Me.Name = "Form2"
         Me.Text = "Form2"
