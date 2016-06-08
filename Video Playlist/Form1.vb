@@ -137,7 +137,8 @@ Public Class Form1
                 videoForm.Show()
                 videoForm.sendSaveData(Me)
                 videoForm.WMPlayer.URL = row.Cells(0).Value
-                videoForm.con.currentPosition = row.Cells(3).Value
+                videoForm.con.currentPosition = TimeSpan.Parse(row.Cells(3).Value).TotalSeconds()
+
 
                 Exit Sub
 

@@ -30,7 +30,7 @@
         If WMPlayer IsNot Nothing And WMPlayer.currentMedia IsNot Nothing Then
             For Each row As DataGridViewRow In f1.videoList.Rows
                 If row.Cells(0).Value.ToString() = WMPlayer.currentMedia.sourceURL() Then
-                    row.Cells(3).Value = con.currentPosition
+                    row.Cells(3).Value = TimeSpan.FromSeconds(con.currentPosition).ToString("hh\:mm\:ss")
                     Exit For
                 End If
             Next
