@@ -11,6 +11,7 @@ Public Class Form1
 
     Dim videoForm As New Form2
     Dim playlistSaveLoc As String
+    Public currentIndex As Integer
     Public saveLoc As String = "C:\test2"
 
 
@@ -65,6 +66,7 @@ Public Class Form1
 
         Dim playlistNameDialog As Form3
         playlistNameDialog = New Form3()
+        playlistNameDialog.StartPosition = FormStartPosition.CenterParent
 
         If playlistNameDialog.ShowDialog(Me) = DialogResult.OK Then
             If playlistNameDialog.answer IsNot "" Then
@@ -90,7 +92,7 @@ Public Class Form1
                         t.Minutes.ToString.PadLeft(2, "0"c) & ":" &
                         t.Seconds.ToString.PadLeft(2, "0"c)
 
-                    videoList.Rows.Add(filename, Path.GetFileName(filename), time, "0", "False")
+                    videoList.Rows.Add(filename, Path.GetFileName(filename), time, "00:00:00", "False")
                 Next
 
 
@@ -127,21 +129,30 @@ Public Class Form1
         End If
 
     End Sub
-
-    Private Sub ContinuePlaylist_Click(sender As Object, e As EventArgs) Handles ContinuePlaylist.Click
-
+    Private Sub getNextVideo()
         For Each row As DataGridViewRow In videoList.Rows
             If row.Cells(4).Value.ToString() = "False" Then
-                'If videoForm Is Nothing Then
-                videoForm = New Form2
-                'End If
-                videoForm.Show()
-                videoForm.sendSaveData(Me)
-                videoForm.WMPlayer.URL = row.Cells(0).Value
-                videoForm.con.currentPosition = TimeSpan.Parse(row.Cells(3).Value).TotalSeconds()
+                currentIndex = row.Index
                 Exit Sub
             End If
         Next
+    End Sub
+    Private Sub ContinuePlaylist_Click(sender As Object, e As EventArgs) Handles ContinuePlaylist.Click
+        getNextVideo()
+        If videoList.Rows(currentIndex).Cells(4).Value.ToString() = "False" Then
+            If Not videoForm.Visible Or videoForm.IsDisposed Then
+                videoForm = New Form2
+                videoForm.sendFormData(Me)
+                videoForm.Location = Me.Location
+                videoForm.Show()
+            End If
+            videoForm.WMPlayer.URL = videoList.Rows(currentIndex).Cells(0).Value
+            videoForm.WMPlayer.Ctlcontrols.currentPosition = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds()
+            videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Blue
+            videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Blue
+            videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Blue
+            Exit Sub
+        End If
 
 
     End Sub
@@ -180,28 +191,63 @@ Public Class Form1
         savePlaylist(videoList, PlaylistName.Text, saveLoc)
     End Sub
 
-    Public Sub playNext(prevVideo As Integer)
-        For Each row As DataGridViewRow In videoList.Rows
-            If row.Index = prevVideo + 1 Then
-                videoForm.Close()
-                videoForm = New Form2
-                videoForm.Show()
-                videoForm.sendSaveData(Me)
-                videoForm.WMPlayer.URL = row.Cells(0).Value
-                videoForm.con.currentPosition = TimeSpan.Parse(row.Cells(3).Value).TotalSeconds()
-                Exit For
-            End If
-        Next
-    End Sub
+    Public Sub playNext()
+        videoList.Rows(currentIndex).Cells(4).Value = "True"
+        videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Silver
+        videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Silver
+        videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Silver
+        currentIndex += 1
+        If Not videoForm.Visible Or videoForm.IsDisposed Then
+            videoForm = New Form2
+            videoForm.Location = Me.Location
+            videoForm.sendFormData(Me)
+            videoForm.Show()
+        End If
+        videoForm.WMPlayer.URL = videoList.Rows(currentIndex).Cells(0).Value
+        videoForm.WMPlayer.Ctlcontrols.currentPosition = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds()
+        videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Blue
+        videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Blue
+        videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Blue
 
+        savePlaylist(videoList, PlaylistName.Text, saveLoc)
+    End Sub
+    Public Sub playPrev()
+        videoList.Rows(currentIndex).Cells(4).Value = "False"
+        videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Black
+        videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Black
+        videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Black
+        currentIndex -= 1
+        If Not videoForm.Visible Or videoForm.IsDisposed Then
+            videoForm = New Form2
+            videoForm.Location = Me.Location
+            videoForm.sendFormData(Me)
+            videoForm.Show()
+        End If
+        videoForm.WMPlayer.URL = videoList.Rows(currentIndex).Cells(0).Value
+        If TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds() = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(2).Value).TotalSeconds() Then
+            videoList.Rows(currentIndex).Cells(3).Value = "00:00:00"
+        End If
+        videoForm.WMPlayer.Ctlcontrols.currentPosition = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds()
+        videoList.Rows(currentIndex).Cells(4).Value = "False"
+        videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Blue
+        videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Blue
+        videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Blue
+
+        savePlaylist(videoList, PlaylistName.Text, saveLoc)
+    End Sub
+    Public Sub refreshVideo()
+        videoForm.WMPlayer.URL = videoList.Rows(currentIndex).Cells(0).Value
+        videoForm.WMPlayer.Ctlcontrols.currentPosition = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds()
+    End Sub
     Private Sub DeletePlayist_Click(sender As Object, e As EventArgs) Handles DeletePlayist.Click
         Dim deletePlaylist As deleteConfim
         deletePlaylist = New deleteConfim()
+        deletePlaylist.StartPosition = FormStartPosition.CenterParent
         deletePlaylist.question = "Are you sure you want to delete the Playlist '" + PlaylistName.Text + "'?"
         If deletePlaylist.ShowDialog(Me) = DialogResult.Yes Then
             My.Computer.FileSystem.DeleteFile(saveLoc + "/" + PlaylistName.Text + ".json",
-Microsoft.VisualBasic.FileIO.UIOption.AllDialogs,
-Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin)
+                Microsoft.VisualBasic.FileIO.UIOption.AllDialogs,
+                Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin)
             videoList.Rows.Clear()
             PlaylistName.Text = ""
         End If
