@@ -30,6 +30,7 @@
             mon2 = True
             mon1 = False
         End If
+        Me.Name = "Video Player"
     End Sub
 
     Private Sub form2closing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
@@ -65,16 +66,22 @@
     End Sub
 
     Private Sub multimontiormove(sender As Object, e As EventArgs) Handles MyBase.LocationChanged
-        Console.WriteLine(Me.Location.ToString)
-        If Me.Location.X >= (1920 - Me.Width / 2) And mon1 Then
-            f1.refreshVideo()
+        'Console.WriteLine(Me.Location.ToString)
+        If Me.Location.X > (1920 - Me.Width / 2) And mon1 Then
+            refreshVideo()
             mon1 = False
             mon2 = True
-        ElseIf Me.Location.X <= (1920 - Me.Width / 2) And mon2 Then
-            f1.refreshVideo()
+        ElseIf Me.Location.X < (1920 - Me.Width / 2) And mon2 Then
+            refreshVideo()
             mon2 = False
             mon1 = True
         End If
 
+    End Sub
+
+    Public Sub refreshVideo()
+        Dim cp As Double = WMPlayer.Ctlcontrols.currentPosition
+        WMPlayer.URL = WMPlayer.URL
+        WMPlayer.Ctlcontrols.currentPosition = cp
     End Sub
 End Class

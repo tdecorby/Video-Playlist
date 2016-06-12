@@ -3,16 +3,19 @@ Imports Newtonsoft.Json
 Imports WMPLib
 
 Public Structure settings
-    Public lastopenedfile As String
+    Public lastOpenedPlaylist As String
+    Public lastOpenedFileLoc As String
 End Structure
 
 
 Public Class Form1
 
-    Dim videoForm As New Form2
-    Dim playlistSaveLoc As String
+    Private setting As New settings
+    Private videoForm As New Form2
     Public currentIndex As Integer
-    Public saveLoc As String = "C:\test2"
+    Private saveLoc As String = "C:\test2"
+    Private lastOpenedLocation As String = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+    Private playlistLoaded As Boolean = False
 
 
     Private Sub SetupDataGridView()
@@ -53,15 +56,21 @@ Public Class Form1
 
 
     Private Sub OpenButton_Click(sender As Object, e As EventArgs) Handles OpenVideo.Click
-        With OpenFileDialog
+        With OpenVideoFiles
             .Filter = "All Files (*.*)|*.*|*AVI|*avi|*MP4|*mp4|*MKV|*mkv"
             .ShowDialog()
             videoForm.Show()
-            videoForm.WMPlayer.URL = OpenFileDialog.FileName
+            videoForm.WMPlayer.URL = OpenVideoFiles.FileName
         End With
     End Sub
 
     Private Sub NewPlayist_Click(sender As Object, e As EventArgs) Handles NewPlayist.Click
+        If playlistLoaded Then
+            savePlaylist(videoList, PlaylistName.Text, saveLoc)
+        End If
+        createNewPlaylist()
+    End Sub
+    Private Sub createNewPlaylist()
         Dim plname As String = "NewPlaylist"
 
         Dim playlistNameDialog As Form3
@@ -73,38 +82,11 @@ Public Class Form1
                 plname = playlistNameDialog.answer
             End If
             PlaylistName.Text = plname
-
-            With OpenFileDialog
-                .Filter = "All Files (*.*)|*.*|*AVI|*avi|*MP4|*mp4|*MKV|*mkv"
-                .Multiselect = True
-                .ShowDialog()
-
-                videoList.Rows.Clear()
-                Dim t As TimeSpan
-                For Each filename As String In OpenFileDialog.FileNames
-                    If My.Computer.FileSystem.FileExists(filename) Then
-                        Dim wmp As WindowsMediaPlayer = New WindowsMediaPlayer
-                        Dim mediainfo As IWMPMedia = wmp.newMedia(filename)
-                        t = TimeSpan.FromSeconds(mediainfo.duration)
-                    End If
-
-                    Dim time = t.Hours.ToString.PadLeft(2, "0"c) & ":" &
-                        t.Minutes.ToString.PadLeft(2, "0"c) & ":" &
-                        t.Seconds.ToString.PadLeft(2, "0"c)
-
-                    videoList.Rows.Add(filename, Path.GetFileName(filename), time, "00:00:00", "False")
-                Next
-
-
-
-            End With
-
-            savePlaylist(videoList, PlaylistName.Text, saveLoc)
-            saveSettings()
+            videoList.Rows.Clear()
+            addVideosToList()
+            playlistLoaded = True
         End If
-
     End Sub
-
     Public Sub savePlaylist(dgv As DataGridView, playlistName As String, saveLoc As String)
         Dim playlist As New Dictionary(Of String, String())
         For Each row As DataGridViewRow In dgv.Rows
@@ -114,59 +96,63 @@ Public Class Form1
     End Sub
 
     Private Sub saveSettings()
-        Dim setting As New settings
-        setting.lastopenedfile = PlaylistName.Text
+        setting.lastOpenedPlaylist = PlaylistName.Text
         File.WriteAllText(saveLoc + "\settings.json", JsonConvert.SerializeObject(setting))
     End Sub
 
     Private Sub onformLoad(sender As Object, e As EventArgs) Handles MyBase.Load
         SetupDataGridView()
         If My.Computer.FileSystem.FileExists(saveLoc + "/settings.json") Then
-            Dim setting As settings = JsonConvert.DeserializeObject(Of settings)(File.ReadAllText(saveLoc + "\settings.json"))
-            If My.Computer.FileSystem.FileExists(saveLoc + "/" + setting.lastopenedfile + ".json") Then
-                loadPlaylistFromFile(saveLoc + "\" + setting.lastopenedfile + ".json")
+            setting = JsonConvert.DeserializeObject(Of settings)(File.ReadAllText(saveLoc + "\settings.json"))
+            If My.Computer.FileSystem.FileExists(saveLoc + "/" + setting.lastOpenedPlaylist + ".json") Then
+                loadPlaylistFromFile(saveLoc + "\" + setting.lastOpenedPlaylist + ".json")
+            End If
+            If Not My.Computer.FileSystem.DirectoryExists(setting.lastOpenedFileLoc) Then
+                setting.lastOpenedFileLoc = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
             End If
         End If
 
     End Sub
-    Private Sub getNextVideo()
+    Private Function getNextVideo()
         For Each row As DataGridViewRow In videoList.Rows
-            If row.Cells(4).Value.ToString() = "False" Then
+            If row.Cells(4).Value.ToString() = "False" And row.Cells(1).Style.ForeColor <> Color.Red Then
                 currentIndex = row.Index
-                Exit Sub
+                Return True
             End If
         Next
-    End Sub
+        Return False
+    End Function
     Private Sub ContinuePlaylist_Click(sender As Object, e As EventArgs) Handles ContinuePlaylist.Click
-        getNextVideo()
-        If videoList.Rows(currentIndex).Cells(4).Value.ToString() = "False" Then
-            If Not videoForm.Visible Or videoForm.IsDisposed Then
-                videoForm = New Form2
-                videoForm.sendFormData(Me)
-                videoForm.Location = Me.Location
-                videoForm.Show()
+        If playlistLoaded Then
+            If getNextVideo() Then
+                playFile(videoList.Rows(currentIndex).Cells(0).Value, TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds())
+                colorRow(currentIndex, Color.Blue)
+            Else
+                MessageBox.Show("Playlist ended")
             End If
-            videoForm.WMPlayer.URL = videoList.Rows(currentIndex).Cells(0).Value
-            videoForm.WMPlayer.Ctlcontrols.currentPosition = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds()
-            videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Blue
-            videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Blue
-            videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Blue
-            Exit Sub
         End If
-
-
+    End Sub
+    Private Sub colorRow(index As Integer, color As Color)
+        videoList.Rows(index).Cells(1).Style.ForeColor = color
+        videoList.Rows(index).Cells(2).Style.ForeColor = color
+        videoList.Rows(index).Cells(3).Style.ForeColor = color
+        videoList.Rows(index).Cells(1).Style.SelectionForeColor = color
+        videoList.Rows(index).Cells(2).Style.SelectionForeColor = color
+        videoList.Rows(index).Cells(3).Style.SelectionForeColor = color
     End Sub
 
     Private Sub OpenPlaylist_Click(sender As Object, e As EventArgs) Handles OpenPlaylist.Click
-        With OpenFileDialog
+        With openSystemfiles
             .Filter = "All Files (*.*)|*.*|Json|*.json"
             .Multiselect = False
             .InitialDirectory = saveLoc
 
-            If OpenFileDialog.ShowDialog() = DialogResult.OK Then
-                savePlaylist(videoList, PlaylistName.Text, saveLoc)
-                loadPlaylistFromFile(OpenFileDialog.FileName)
-            End If
+            If openSystemfiles.ShowDialog() = DialogResult.OK Then
+                If playlistLoaded Then
+                    savePlaylist(videoList, PlaylistName.Text, saveLoc)
+                End If
+                loadPlaylistFromFile(openSystemfiles.FileName)
+                End If
 
         End With
     End Sub
@@ -179,77 +165,168 @@ Public Class Form1
         Next
         For Each row As DataGridViewRow In videoList.Rows
             If row.Cells(4).Value.ToString() = "True" Then
-                row.Cells(1).Style.ForeColor = Color.Silver
-                row.Cells(2).Style.ForeColor = Color.Silver
-                row.Cells(3).Style.ForeColor = Color.Silver
+                colorRow(row.Index, Color.Silver)
+            End If
+            If Not My.Computer.FileSystem.FileExists(row.Cells(0).Value) Then
+                colorRow(row.Index, Color.Red)
             End If
         Next
         saveSettings()
+        playlistLoaded = True
     End Sub
 
     Private Sub saveBeforeClose(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
-        savePlaylist(videoList, PlaylistName.Text, saveLoc)
+        If playlistLoaded Then
+            savePlaylist(videoList, PlaylistName.Text, saveLoc)
+        End If
     End Sub
 
     Public Sub playNext()
-        videoList.Rows(currentIndex).Cells(4).Value = "True"
-        videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Silver
-        videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Silver
-        videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Silver
-        currentIndex += 1
-        If Not videoForm.Visible Or videoForm.IsDisposed Then
-            videoForm = New Form2
-            videoForm.Location = Me.Location
-            videoForm.sendFormData(Me)
-            videoForm.Show()
-        End If
-        videoForm.WMPlayer.URL = videoList.Rows(currentIndex).Cells(0).Value
-        videoForm.WMPlayer.Ctlcontrols.currentPosition = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds()
-        videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Blue
-        videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Blue
-        videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Blue
+        If playlistLoaded Then
+            Dim brokenLink As Boolean = False
+            If currentIndex < videoList.RowCount - 1 Then
+                Dim index As Integer = currentIndex
+                Do
+                    index += 1
+                    If videoList.Rows(index).Cells(1).Style.ForeColor = Color.Red Then
+                        brokenLink = True
+                    Else
+                        brokenLink = False
+                        Exit Do
+                    End If
+                Loop Until index = videoList.RowCount - 1
+                savePlaylist(videoList, PlaylistName.Text, saveLoc)
 
-        savePlaylist(videoList, PlaylistName.Text, saveLoc)
+                If index < videoList.RowCount And Not brokenLink Then
+                    videoList.Rows(currentIndex).Cells(4).Value = "True"
+                    colorRow(currentIndex, Color.Silver)
+                    currentIndex = index
+                    playFile(videoList.Rows(currentIndex).Cells(0).Value, TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds())
+                    colorRow(currentIndex, Color.Blue)
+                Else
+                    MessageBox.Show("You are at the end of the Playlist")
+                End If
+            Else
+                videoForm.Close()
+                MessageBox.Show("You are at the end of the Playlist")
+            End If
+        End If
     End Sub
     Public Sub playPrev()
-        videoList.Rows(currentIndex).Cells(4).Value = "False"
-        videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Black
-        videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Black
-        videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Black
-        currentIndex -= 1
-        If Not videoForm.Visible Or videoForm.IsDisposed Then
-            videoForm = New Form2
-            videoForm.Location = Me.Location
-            videoForm.sendFormData(Me)
-            videoForm.Show()
-        End If
-        videoForm.WMPlayer.URL = videoList.Rows(currentIndex).Cells(0).Value
-        If TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds() = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(2).Value).TotalSeconds() Then
-            videoList.Rows(currentIndex).Cells(3).Value = "00:00:00"
-        End If
-        videoForm.WMPlayer.Ctlcontrols.currentPosition = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds()
-        videoList.Rows(currentIndex).Cells(4).Value = "False"
-        videoList.Rows(currentIndex).Cells(1).Style.ForeColor = Color.Blue
-        videoList.Rows(currentIndex).Cells(2).Style.ForeColor = Color.Blue
-        videoList.Rows(currentIndex).Cells(3).Style.ForeColor = Color.Blue
+        If playlistLoaded Then
+            Dim brokenLink As Boolean = False
+            If currentIndex - 1 >= 0 Then
+                Dim index As Integer = currentIndex
+                Do
+                    index -= 1
+                    If videoList.Rows(index).Cells(1).Style.ForeColor = Color.Red Then
+                        brokenLink = True
+                    Else
+                        brokenLink = False
+                        Exit Do
+                    End If
+                Loop Until index = 0
+                savePlaylist(videoList, PlaylistName.Text, saveLoc)
 
-        savePlaylist(videoList, PlaylistName.Text, saveLoc)
-    End Sub
-    Public Sub refreshVideo()
-        videoForm.WMPlayer.URL = videoList.Rows(currentIndex).Cells(0).Value
-        videoForm.WMPlayer.Ctlcontrols.currentPosition = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds()
+                If index >= 0 And Not brokenLink Then
+                    videoList.Rows(currentIndex).Cells(4).Value = "False"
+                    colorRow(currentIndex, Color.Black)
+                    currentIndex = index
+                    If TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds() = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(2).Value).TotalSeconds() Then
+                        videoList.Rows(currentIndex).Cells(3).Value = "00:00:00"
+                    End If
+                    videoList.Rows(currentIndex).Cells(4).Value = "False"
+                    playFile(videoList.Rows(currentIndex).Cells(0).Value, TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds())
+                    colorRow(currentIndex, Color.Blue)
+                Else
+                    MessageBox.Show("You are at the start of the playlist")
+                End If
+            Else
+                MessageBox.Show("You are at the start of the playlist")
+            End If
+        End If
     End Sub
     Private Sub DeletePlayist_Click(sender As Object, e As EventArgs) Handles DeletePlayist.Click
-        Dim deletePlaylist As deleteConfim
-        deletePlaylist = New deleteConfim()
-        deletePlaylist.StartPosition = FormStartPosition.CenterParent
-        deletePlaylist.question = "Are you sure you want to delete the Playlist '" + PlaylistName.Text + "'?"
-        If deletePlaylist.ShowDialog(Me) = DialogResult.Yes Then
-            My.Computer.FileSystem.DeleteFile(saveLoc + "/" + PlaylistName.Text + ".json",
+        If playlistLoaded Then
+            Dim deletePlaylist As deleteConfim
+            deletePlaylist = New deleteConfim()
+            deletePlaylist.StartPosition = FormStartPosition.CenterParent
+            deletePlaylist.question = "Are you sure you want to delete the Playlist '" + PlaylistName.Text + "'?"
+            If deletePlaylist.ShowDialog(Me) = DialogResult.Yes Then
+                My.Computer.FileSystem.DeleteFile(saveLoc + "/" + PlaylistName.Text + ".json",
                 Microsoft.VisualBasic.FileIO.UIOption.AllDialogs,
                 Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin)
-            videoList.Rows.Clear()
-            PlaylistName.Text = ""
+                videoList.Rows.Clear()
+                PlaylistName.Text = ""
+                playlistLoaded = False
+            End If
         End If
+    End Sub
+
+    Private Sub AddVideos_Click(sender As Object, e As EventArgs) Handles AddVideos.Click
+        If playlistLoaded Then
+            addVideosToList()
+        Else
+            createNewPlaylist()
+        End If
+    End Sub
+    Private Sub addVideosToList()
+        With OpenVideoFiles
+            .Filter = "All Files (*.*)|*.*|*AVI|*avi|*MP4|*mp4|*MKV|*mkv"
+            .Multiselect = True
+            .InitialDirectory = setting.lastOpenedFileLoc
+            If OpenVideoFiles.ShowDialog() = DialogResult.OK Then
+                setting.lastOpenedFileLoc = Path.GetDirectoryName(OpenVideoFiles.FileName)
+
+                Dim t As TimeSpan
+                For Each filename As String In OpenVideoFiles.FileNames
+                    If My.Computer.FileSystem.FileExists(filename) Then
+                        Dim wmp As WindowsMediaPlayer = New WindowsMediaPlayer
+                        Dim mediainfo As IWMPMedia = wmp.newMedia(filename)
+                        t = TimeSpan.FromSeconds(mediainfo.duration)
+                    End If
+
+                    Dim time = t.Hours.ToString.PadLeft(2, "0"c) & ":" &
+                        t.Minutes.ToString.PadLeft(2, "0"c) & ":" &
+                        t.Seconds.ToString.PadLeft(2, "0"c)
+
+                    videoList.Rows.Add(filename, Path.GetFileName(filename), time, "00:00:00", "False")
+                Next
+            End If
+        End With
+
+        savePlaylist(videoList, PlaylistName.Text, saveLoc)
+        saveSettings()
+    End Sub
+
+    Private Sub StartPlaylistFromBeg_Click(sender As Object, e As EventArgs) Handles StartPlaylistFromBeg.Click
+        If playlistLoaded Then
+            currentIndex = 0
+            For Each row As DataGridViewRow In videoList.Rows
+                If row.Cells(1).Style.ForeColor <> Color.Red Then
+                    row.Cells(4).Value = "False"
+                    row.Cells(3).Value = "00:00:00"
+                    colorRow(row.Index, Color.Black)
+                End If
+            Next
+            For Each row As DataGridViewRow In videoList.Rows
+                If row.Cells(1).Style.ForeColor <> Color.Red Then
+                    Exit For
+                End If
+                currentIndex += 1
+            Next
+            playFile(videoList.Rows(currentIndex).Cells(0).Value, TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds())
+            colorRow(currentIndex, Color.Blue)
+        End If
+    End Sub
+    Private Sub playFile(url As String, time As Double)
+        If Not videoForm.Visible Or videoForm.IsDisposed Then
+            videoForm = New Form2
+            videoForm.sendFormData(Me)
+            videoForm.Location = Me.Location
+            videoForm.Show()
+        End If
+        videoForm.WMPlayer.URL = url
+        videoForm.WMPlayer.Ctlcontrols.currentPosition = time
     End Sub
 End Class
