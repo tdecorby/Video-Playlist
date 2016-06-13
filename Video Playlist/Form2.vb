@@ -30,7 +30,6 @@
             mon2 = True
             mon1 = False
         End If
-        Me.Name = "Video Player"
     End Sub
 
     Private Sub form2closing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing

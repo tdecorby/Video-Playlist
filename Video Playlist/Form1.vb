@@ -16,6 +16,10 @@ Public Class Form1
     Private saveLoc As String = "C:\test2"
     Private lastOpenedLocation As String = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
     Private playlistLoaded As Boolean = False
+    Private playingColor As Color = Color.Blue
+    Private brokenColor As Color = Color.Red
+    Private defaultColor As Color = Color.Black
+    Private watchedColor As Color = Color.Silver
 
 
     Private Sub SetupDataGridView()
@@ -34,7 +38,7 @@ Public Class Form1
                 DataGridViewAutoSizeRowsMode.DisplayedCellsExceptHeaders
             .ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None
             .CellBorderStyle = DataGridViewCellBorderStyle.None
-            .GridColor = Color.Black
+            .GridColor = defaultColor
             .RowHeadersVisible = False
 
 
@@ -52,16 +56,6 @@ Public Class Form1
             '.Dock = DockStyle.Fill
         End With
 
-    End Sub
-
-
-    Private Sub OpenButton_Click(sender As Object, e As EventArgs) Handles OpenVideo.Click
-        With OpenVideoFiles
-            .Filter = "All Files (*.*)|*.*|*AVI|*avi|*MP4|*mp4|*MKV|*mkv"
-            .ShowDialog()
-            videoForm.Show()
-            videoForm.WMPlayer.URL = OpenVideoFiles.FileName
-        End With
     End Sub
 
     Private Sub NewPlayist_Click(sender As Object, e As EventArgs) Handles NewPlayist.Click
@@ -126,7 +120,7 @@ Public Class Form1
         If playlistLoaded Then
             If getNextVideo() Then
                 playFile(videoList.Rows(currentIndex).Cells(0).Value, TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds())
-                colorRow(currentIndex, Color.Blue)
+                colorRow(currentIndex, playingColor)
             Else
                 MessageBox.Show("Playlist ended")
             End If
@@ -165,12 +159,13 @@ Public Class Form1
         Next
         For Each row As DataGridViewRow In videoList.Rows
             If row.Cells(4).Value.ToString() = "True" Then
-                colorRow(row.Index, Color.Silver)
+                colorRow(row.Index, watchedColor)
             End If
             If Not My.Computer.FileSystem.FileExists(row.Cells(0).Value) Then
-                colorRow(row.Index, Color.Red)
+                colorRow(row.Index, brokenColor)
             End If
         Next
+        updateStats()
         saveSettings()
         playlistLoaded = True
     End Sub
@@ -188,7 +183,7 @@ Public Class Form1
                 Dim index As Integer = currentIndex
                 Do
                     index += 1
-                    If videoList.Rows(index).Cells(1).Style.ForeColor = Color.Red Then
+                    If videoList.Rows(index).Cells(1).Style.ForeColor = brokenColor Then
                         brokenLink = True
                     Else
                         brokenLink = False
@@ -199,10 +194,10 @@ Public Class Form1
 
                 If index < videoList.RowCount And Not brokenLink Then
                     videoList.Rows(currentIndex).Cells(4).Value = "True"
-                    colorRow(currentIndex, Color.Silver)
+                    colorRow(currentIndex, watchedColor)
                     currentIndex = index
                     playFile(videoList.Rows(currentIndex).Cells(0).Value, TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds())
-                    colorRow(currentIndex, Color.Blue)
+                    colorRow(currentIndex, playingColor)
                 Else
                     MessageBox.Show("You are at the end of the Playlist")
                 End If
@@ -219,7 +214,7 @@ Public Class Form1
                 Dim index As Integer = currentIndex
                 Do
                     index -= 1
-                    If videoList.Rows(index).Cells(1).Style.ForeColor = Color.Red Then
+                    If videoList.Rows(index).Cells(1).Style.ForeColor = brokenColor Then
                         brokenLink = True
                     Else
                         brokenLink = False
@@ -230,14 +225,14 @@ Public Class Form1
 
                 If index >= 0 And Not brokenLink Then
                     videoList.Rows(currentIndex).Cells(4).Value = "False"
-                    colorRow(currentIndex, Color.Black)
+                    colorRow(currentIndex, defaultColor)
                     currentIndex = index
                     If TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds() = TimeSpan.Parse(videoList.Rows(currentIndex).Cells(2).Value).TotalSeconds() Then
                         videoList.Rows(currentIndex).Cells(3).Value = "00:00:00"
                     End If
                     videoList.Rows(currentIndex).Cells(4).Value = "False"
                     playFile(videoList.Rows(currentIndex).Cells(0).Value, TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds())
-                    colorRow(currentIndex, Color.Blue)
+                    colorRow(currentIndex, playingColor)
                 Else
                     MessageBox.Show("You are at the start of the playlist")
                 End If
@@ -278,45 +273,63 @@ Public Class Form1
             If OpenVideoFiles.ShowDialog() = DialogResult.OK Then
                 setting.lastOpenedFileLoc = Path.GetDirectoryName(OpenVideoFiles.FileName)
 
-                Dim t As TimeSpan
+
                 For Each filename As String In OpenVideoFiles.FileNames
+                    Dim t As New TimeSpan
                     If My.Computer.FileSystem.FileExists(filename) Then
                         Dim wmp As WindowsMediaPlayer = New WindowsMediaPlayer
                         Dim mediainfo As IWMPMedia = wmp.newMedia(filename)
                         t = TimeSpan.FromSeconds(mediainfo.duration)
                     End If
 
-                    Dim time = t.Hours.ToString.PadLeft(2, "0"c) & ":" &
-                        t.Minutes.ToString.PadLeft(2, "0"c) & ":" &
-                        t.Seconds.ToString.PadLeft(2, "0"c)
-
-                    videoList.Rows.Add(filename, Path.GetFileName(filename), time, "00:00:00", "False")
+                    videoList.Rows.Add(filename, Path.GetFileName(filename), t.ToString("hh\:mm\:ss"), "00:00:00", "False")
                 Next
             End If
         End With
-
+        updateStats()
         savePlaylist(videoList, PlaylistName.Text, saveLoc)
         saveSettings()
     End Sub
+    Private Sub updateStats()
+        Dim totalVideos As Integer = 0
+        Dim watched As Integer = 0
+        Dim timeWatched As Double = 0
+        Dim totalTime As Double = 0
+        For Each row As DataGridViewRow In videoList.Rows
+            If row.Cells(4).Value.ToString() = "True" Then
+                watched += 1
+            End If
+            totalVideos += 1
+            timeWatched += TimeSpan.Parse(row.Cells(3).Value).TotalSeconds()
+            totalTime += TimeSpan.Parse(row.Cells(2).Value).TotalSeconds()
+        Next
 
+        WatchedRatio.Text = watched.ToString() + " / " + totalVideos.ToString()
+        TimeLeft.Text = TimeSpan.FromSeconds(totalTime - timeWatched).ToString("hh\:mm\:ss")
+    End Sub
     Private Sub StartPlaylistFromBeg_Click(sender As Object, e As EventArgs) Handles StartPlaylistFromBeg.Click
         If playlistLoaded Then
+            If MessageBox.Show("Doing this will permanently reset all values" + vbCrLf + "Are you sure you want to start from the beginning?", "Start Playlist from Beginning",
+         MessageBoxButtons.YesNo, MessageBoxIcon.Question) _
+         = DialogResult.No Then
+                Exit Sub
+            End If
             currentIndex = 0
             For Each row As DataGridViewRow In videoList.Rows
-                If row.Cells(1).Style.ForeColor <> Color.Red Then
+                If row.Cells(1).Style.ForeColor <> brokenColor Then
                     row.Cells(4).Value = "False"
                     row.Cells(3).Value = "00:00:00"
-                    colorRow(row.Index, Color.Black)
+                    colorRow(row.Index, defaultColor)
                 End If
             Next
             For Each row As DataGridViewRow In videoList.Rows
-                If row.Cells(1).Style.ForeColor <> Color.Red Then
+                If row.Cells(1).Style.ForeColor <> brokenColor Then
                     Exit For
                 End If
                 currentIndex += 1
             Next
             playFile(videoList.Rows(currentIndex).Cells(0).Value, TimeSpan.Parse(videoList.Rows(currentIndex).Cells(3).Value).TotalSeconds())
-            colorRow(currentIndex, Color.Blue)
+            colorRow(currentIndex, playingColor)
         End If
     End Sub
     Private Sub playFile(url As String, time As Double)
@@ -328,5 +341,94 @@ Public Class Form1
         End If
         videoForm.WMPlayer.URL = url
         videoForm.WMPlayer.Ctlcontrols.currentPosition = time
+    End Sub
+
+    Private Sub PlayToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles PlayToolStripMenuItem.Click
+        playFile(videoList.CurrentRow.Cells(0).Value, TimeSpan.Parse(videoList.CurrentRow.Cells(3).Value).TotalSeconds())
+        currentIndex = videoList.CurrentRow.Index
+        For Each row As DataGridViewRow In videoList.Rows
+            If row.Cells(1).Style.ForeColor = playingColor Then
+                colorRow(row.Index, defaultColor)
+                Exit For
+            End If
+        Next
+        colorRow(currentIndex, playingColor)
+    End Sub
+
+    Private Sub videoList_MouseDown(sender As Object, e As DataGridViewCellMouseEventArgs) Handles videoList.CellMouseDown
+        If e.Button = MouseButtons.Right Then
+            videoList.CurrentCell = videoList(e.ColumnIndex, e.RowIndex)
+        End If
+    End Sub
+
+    Private Sub DeleteToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DeleteToolStripMenuItem.Click
+        videoList.Rows.RemoveAt(videoList.CurrentRow.Index)
+        updateStats()
+        savePlaylist(videoList, PlaylistName.Text, saveLoc)
+    End Sub
+
+    Private Sub ToggleWatchedToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ToggleWatchedToolStripMenuItem.Click
+        If videoList.CurrentRow.Cells(4).Value.ToString() = "True" Then
+            videoList.CurrentRow.Cells(4).Value = False
+            colorRow(videoList.CurrentRow.Index, defaultColor)
+        Else
+            videoList.CurrentRow.Cells(4).Value = True
+            colorRow(videoList.CurrentRow.Index, watchedColor)
+        End If
+        savePlaylist(videoList, PlaylistName.Text, saveLoc)
+    End Sub
+
+    Private Sub SetWatchedTo0ToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles SetWatchedTo0ToolStripMenuItem.Click
+        videoList.CurrentRow.Cells(3).Value = "00:00:00"
+        savePlaylist(videoList, PlaylistName.Text, saveLoc)
+    End Sub
+
+    Private Sub UpToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles UpToolStripMenuItem.Click
+        If videoList.CurrentRow.Index > 0 Then
+            moveRow(-1)
+        End If
+
+    End Sub
+
+    Private Sub moveRow(i As Integer)
+        If videoList.SelectedCells.Count > 0 Then
+            Dim curr_index As Integer = videoList.CurrentCell.RowIndex
+            Dim curr_col_index As Integer = videoList.CurrentCell.ColumnIndex
+            Dim curr_row As DataGridViewRow = videoList.CurrentRow
+            videoList.Rows.Remove(curr_row)
+            videoList.Rows.Insert(curr_index + i, curr_row)
+            videoList.CurrentCell = videoList(curr_col_index, curr_index + i)
+            savePlaylist(videoList, PlaylistName.Text, saveLoc)
+        End If
+    End Sub
+
+    Private Sub DownToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles DownToolStripMenuItem.Click
+        If videoList.CurrentRow.Index < videoList.RowCount - 1 Then
+            moveRow(1)
+        End If
+    End Sub
+
+    Private Sub ToTopToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ToTopToolStripMenuItem.Click
+        If videoList.CurrentRow.Index > 0 Then
+            Dim curr_index As Integer = videoList.CurrentCell.RowIndex
+            Dim curr_col_index As Integer = videoList.CurrentCell.ColumnIndex
+            Dim curr_row As DataGridViewRow = videoList.CurrentRow
+            videoList.Rows.Remove(curr_row)
+            videoList.Rows.Insert(0, curr_row)
+            videoList.CurrentCell = videoList(curr_col_index, 0)
+            savePlaylist(videoList, PlaylistName.Text, saveLoc)
+        End If
+    End Sub
+
+    Private Sub ToBottomToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ToBottomToolStripMenuItem.Click
+        If videoList.CurrentRow.Index < videoList.RowCount - 1 Then
+            Dim curr_index As Integer = videoList.CurrentCell.RowIndex
+            Dim curr_col_index As Integer = videoList.CurrentCell.ColumnIndex
+            Dim curr_row As DataGridViewRow = videoList.CurrentRow
+            videoList.Rows.Remove(curr_row)
+            videoList.Rows.Insert(videoList.RowCount, curr_row)
+            videoList.CurrentCell = videoList(curr_col_index, videoList.RowCount - 1)
+            savePlaylist(videoList, PlaylistName.Text, saveLoc)
+        End If
     End Sub
 End Class

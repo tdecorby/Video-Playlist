@@ -44,7 +44,7 @@ Partial Class Form2
         Me.ClientSize = New System.Drawing.Size(567, 390)
         Me.Controls.Add(Me.WMPlayer)
         Me.Name = "Form2"
-        Me.Text = "Form2"
+        Me.Text = "Video Player"
         CType(Me.WMPlayer, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
