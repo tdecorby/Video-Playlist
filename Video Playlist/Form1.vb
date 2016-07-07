@@ -1,5 +1,6 @@
 ﻿Imports System.IO
 Imports Newtonsoft.Json
+Imports Vlc.DotNet.Forms
 Imports WMPLib
 
 Public Structure settings
@@ -11,7 +12,7 @@ End Structure
 Public Class Form1
 
     Private setting As New settings
-    Private videoForm As New Form2
+    Private videoForm As New Form4
     Public currentIndex As Integer
     Private saveLoc As String = "C:\test2"
     Private lastOpenedLocation As String = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
@@ -95,6 +96,7 @@ Public Class Form1
     End Sub
 
     Private Sub onformLoad(sender As Object, e As EventArgs) Handles MyBase.Load
+
         SetupDataGridView()
         If My.Computer.FileSystem.FileExists(saveLoc + "/settings.json") Then
             setting = JsonConvert.DeserializeObject(Of settings)(File.ReadAllText(saveLoc + "\settings.json"))
@@ -146,7 +148,7 @@ Public Class Form1
                     savePlaylist(videoList, PlaylistName.Text, saveLoc)
                 End If
                 loadPlaylistFromFile(openSystemfiles.FileName)
-                End If
+            End If
 
         End With
     End Sub
@@ -334,13 +336,16 @@ Public Class Form1
     End Sub
     Private Sub playFile(url As String, time As Double)
         If Not videoForm.Visible Or videoForm.IsDisposed Then
-            videoForm = New Form2
+            videoForm = New Form4
             videoForm.sendFormData(Me)
             videoForm.Location = Me.Location
             videoForm.Show()
         End If
-        videoForm.WMPlayer.URL = url
-        videoForm.WMPlayer.Ctlcontrols.currentPosition = time
+        videoForm.setMedia(url)
+
+
+        'videoForm.WMPlayer.URL = url
+        'videoForm.WMPlayer.Ctlcontrols.currentPosition = time
     End Sub
 
     Private Sub PlayToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles PlayToolStripMenuItem.Click

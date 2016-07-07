@@ -27,6 +27,16 @@ Partial Class Form1
         Dim DataGridViewCellStyle2 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
         Me.openSystemfiles = New System.Windows.Forms.OpenFileDialog()
         Me.videoList = New System.Windows.Forms.DataGridView()
+        Me.VideoListContextMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.PlayToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.MoveUpToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.UpToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.DownToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ToTopToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ToBottomToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.DeleteToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ToggleWatchedToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.SetWatchedTo0ToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ContinuePlaylist = New System.Windows.Forms.Button()
         Me.NewPlayist = New System.Windows.Forms.Button()
         Me.OpenPlaylist = New System.Windows.Forms.Button()
@@ -38,16 +48,6 @@ Partial Class Form1
         Me.OpenVideoFiles = New System.Windows.Forms.OpenFileDialog()
         Me.WatchedRatio = New System.Windows.Forms.Label()
         Me.TimeLeft = New System.Windows.Forms.Label()
-        Me.VideoListContextMenu = New System.Windows.Forms.ContextMenuStrip(Me.components)
-        Me.PlayToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.MoveUpToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.DeleteToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.ToggleWatchedToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.UpToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.DownToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.ToTopToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.ToBottomToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.SetWatchedTo0ToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         CType(Me.videoList, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.VideoListContextMenu.SuspendLayout()
         Me.SuspendLayout()
@@ -77,6 +77,67 @@ Partial Class Form1
         Me.videoList.Name = "videoList"
         Me.videoList.Size = New System.Drawing.Size(578, 446)
         Me.videoList.TabIndex = 4
+        '
+        'VideoListContextMenu
+        '
+        Me.VideoListContextMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.PlayToolStripMenuItem, Me.MoveUpToolStripMenuItem, Me.DeleteToolStripMenuItem, Me.ToggleWatchedToolStripMenuItem, Me.SetWatchedTo0ToolStripMenuItem})
+        Me.VideoListContextMenu.Name = "VideoListContextMenu"
+        Me.VideoListContextMenu.Size = New System.Drawing.Size(164, 114)
+        '
+        'PlayToolStripMenuItem
+        '
+        Me.PlayToolStripMenuItem.Name = "PlayToolStripMenuItem"
+        Me.PlayToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
+        Me.PlayToolStripMenuItem.Text = "Play"
+        '
+        'MoveUpToolStripMenuItem
+        '
+        Me.MoveUpToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.UpToolStripMenuItem, Me.DownToolStripMenuItem, Me.ToTopToolStripMenuItem, Me.ToBottomToolStripMenuItem})
+        Me.MoveUpToolStripMenuItem.Name = "MoveUpToolStripMenuItem"
+        Me.MoveUpToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
+        Me.MoveUpToolStripMenuItem.Text = "Move..."
+        '
+        'UpToolStripMenuItem
+        '
+        Me.UpToolStripMenuItem.Name = "UpToolStripMenuItem"
+        Me.UpToolStripMenuItem.Size = New System.Drawing.Size(130, 22)
+        Me.UpToolStripMenuItem.Text = "Up"
+        '
+        'DownToolStripMenuItem
+        '
+        Me.DownToolStripMenuItem.Name = "DownToolStripMenuItem"
+        Me.DownToolStripMenuItem.Size = New System.Drawing.Size(130, 22)
+        Me.DownToolStripMenuItem.Text = "Down"
+        '
+        'ToTopToolStripMenuItem
+        '
+        Me.ToTopToolStripMenuItem.Name = "ToTopToolStripMenuItem"
+        Me.ToTopToolStripMenuItem.Size = New System.Drawing.Size(130, 22)
+        Me.ToTopToolStripMenuItem.Text = "To Top"
+        '
+        'ToBottomToolStripMenuItem
+        '
+        Me.ToBottomToolStripMenuItem.Name = "ToBottomToolStripMenuItem"
+        Me.ToBottomToolStripMenuItem.Size = New System.Drawing.Size(130, 22)
+        Me.ToBottomToolStripMenuItem.Text = "To Bottom"
+        '
+        'DeleteToolStripMenuItem
+        '
+        Me.DeleteToolStripMenuItem.Name = "DeleteToolStripMenuItem"
+        Me.DeleteToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
+        Me.DeleteToolStripMenuItem.Text = "Delete"
+        '
+        'ToggleWatchedToolStripMenuItem
+        '
+        Me.ToggleWatchedToolStripMenuItem.Name = "ToggleWatchedToolStripMenuItem"
+        Me.ToggleWatchedToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
+        Me.ToggleWatchedToolStripMenuItem.Text = "Toggle Watched"
+        '
+        'SetWatchedTo0ToolStripMenuItem
+        '
+        Me.SetWatchedTo0ToolStripMenuItem.Name = "SetWatchedTo0ToolStripMenuItem"
+        Me.SetWatchedTo0ToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
+        Me.SetWatchedTo0ToolStripMenuItem.Text = "Set Watched to 0"
         '
         'ContinuePlaylist
         '
@@ -162,67 +223,6 @@ Partial Class Form1
         Me.TimeLeft.Size = New System.Drawing.Size(48, 13)
         Me.TimeLeft.TabIndex = 14
         Me.TimeLeft.Text = "TimeLeft"
-        '
-        'VideoListContextMenu
-        '
-        Me.VideoListContextMenu.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.PlayToolStripMenuItem, Me.MoveUpToolStripMenuItem, Me.DeleteToolStripMenuItem, Me.ToggleWatchedToolStripMenuItem, Me.SetWatchedTo0ToolStripMenuItem})
-        Me.VideoListContextMenu.Name = "VideoListContextMenu"
-        Me.VideoListContextMenu.Size = New System.Drawing.Size(164, 136)
-        '
-        'PlayToolStripMenuItem
-        '
-        Me.PlayToolStripMenuItem.Name = "PlayToolStripMenuItem"
-        Me.PlayToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
-        Me.PlayToolStripMenuItem.Text = "Play"
-        '
-        'MoveUpToolStripMenuItem
-        '
-        Me.MoveUpToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.UpToolStripMenuItem, Me.DownToolStripMenuItem, Me.ToTopToolStripMenuItem, Me.ToBottomToolStripMenuItem})
-        Me.MoveUpToolStripMenuItem.Name = "MoveUpToolStripMenuItem"
-        Me.MoveUpToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
-        Me.MoveUpToolStripMenuItem.Text = "Move..."
-        '
-        'DeleteToolStripMenuItem
-        '
-        Me.DeleteToolStripMenuItem.Name = "DeleteToolStripMenuItem"
-        Me.DeleteToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
-        Me.DeleteToolStripMenuItem.Text = "Delete"
-        '
-        'ToggleWatchedToolStripMenuItem
-        '
-        Me.ToggleWatchedToolStripMenuItem.Name = "ToggleWatchedToolStripMenuItem"
-        Me.ToggleWatchedToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
-        Me.ToggleWatchedToolStripMenuItem.Text = "Toggle Watched"
-        '
-        'UpToolStripMenuItem
-        '
-        Me.UpToolStripMenuItem.Name = "UpToolStripMenuItem"
-        Me.UpToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
-        Me.UpToolStripMenuItem.Text = "Up"
-        '
-        'DownToolStripMenuItem
-        '
-        Me.DownToolStripMenuItem.Name = "DownToolStripMenuItem"
-        Me.DownToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
-        Me.DownToolStripMenuItem.Text = "Down"
-        '
-        'ToTopToolStripMenuItem
-        '
-        Me.ToTopToolStripMenuItem.Name = "ToTopToolStripMenuItem"
-        Me.ToTopToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
-        Me.ToTopToolStripMenuItem.Text = "To Top"
-        '
-        'ToBottomToolStripMenuItem
-        '
-        Me.ToBottomToolStripMenuItem.Name = "ToBottomToolStripMenuItem"
-        Me.ToBottomToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
-        Me.ToBottomToolStripMenuItem.Text = "To Bottom"
-        '
-        'SetWatchedTo0ToolStripMenuItem
-        '
-        Me.SetWatchedTo0ToolStripMenuItem.Name = "SetWatchedTo0ToolStripMenuItem"
-        Me.SetWatchedTo0ToolStripMenuItem.Size = New System.Drawing.Size(163, 22)
-        Me.SetWatchedTo0ToolStripMenuItem.Text = "Set Watched to 0"
         '
         'Form1
         '

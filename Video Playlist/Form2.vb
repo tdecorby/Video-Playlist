@@ -3,18 +3,37 @@
     Private f1 As Form1
     Private mon1 As Boolean
     Private mon2 As Boolean
+    Private fs As Boolean = False
     Private WithEvents timer1 As Timer
+    Private WithEvents timer2 As Timer
 
     Public Sub InitTimer()
         timer1 = New Timer()
         timer1.Interval = 500
         timer1.Start()
     End Sub
+    Public Sub fullscreenTimer()
+        timer2 = New Timer()
+        timer2.Interval = 500
+        timer2.Start()
+    End Sub
+
     Public Sub timer1_tick(sender As Object, e As EventArgs) Handles timer1.Tick
         If WMPlayer IsNot Nothing And WMPlayer.currentMedia IsNot Nothing Then
             f1.videoList.Rows(f1.currentIndex).Cells(3).Value = TimeSpan.FromSeconds(WMPlayer.Ctlcontrols.currentPosition).ToString("hh\:mm\:ss")
             If WMPlayer.playState = WMPLib.WMPPlayState.wmppsReady Then
                 WMPlayer.Ctlcontrols.play()
+            End If
+        End If
+    End Sub
+    Public Sub timer2_tick(sender As Object, e As EventArgs) Handles timer2.Tick
+        If WMPlayer IsNot Nothing And WMPlayer.currentMedia IsNot Nothing Then
+            If WMPlayer.playState = WMPLib.WMPPlayState.wmppsPlaying Then
+                If fs Then
+                    WMPlayer.fullScreen = fs
+                End If
+                timer2.Dispose()
+                Exit Sub
             End If
         End If
     End Sub
@@ -33,7 +52,9 @@
     End Sub
 
     Private Sub form2closing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
-        timer1.Stop()
+        timer1.Dispose()
+        timer2.Dispose()
+        WMPlayer.Dispose()
     End Sub
 
     Private Sub pauseFullscreen(sender As Object, e As AxWMPLib._WMPOCXEvents_KeyDownEvent) Handles WMPlayer.KeyDownEvent
@@ -47,6 +68,7 @@
                     End If
                 Case Keys.F
                     WMPlayer.fullScreen = If(WMPlayer.fullScreen, False, True)
+                    fs = WMPlayer.fullScreen
                 Case Keys.S
                     f1.playNext()
                 Case Keys.A
@@ -59,7 +81,9 @@
     End Sub
     Private Sub onMediaEnded(sender As Object, e As AxWMPLib._WMPOCXEvents_PlayStateChangeEvent) Handles WMPlayer.PlayStateChange
         If e.newState = WMPLib.WMPPlayState.wmppsMediaEnded Then
+            fullscreenTimer()
             f1.playNext()
+
         End If
 
     End Sub
@@ -83,4 +107,5 @@
         WMPlayer.URL = WMPlayer.URL
         WMPlayer.Ctlcontrols.currentPosition = cp
     End Sub
+
 End Class
